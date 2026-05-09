@@ -1,0 +1,3918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landslide Early Warning System Dashboard</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        /* Custom CSS for Landslide EWS Dashboard */
+        
+        /* Risk level card styles */
+        .risk-level-card {
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+        }
+        
+        .risk-level-card.normal {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .risk-level-card.low {
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+        }
+        
+        .risk-level-card.medium {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+        
+        .risk-level-card.high {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        }
+        
+        .risk-level-card.critical {
+            background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        
+        /* Card hover effects */
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* Progress bars */
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+        
+        .progress-bar {
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+        
+        /* Time filter buttons */
+        .time-filter {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .time-filter-btn {
+            padding: 2px 10px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .time-filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        /* Current values display */
+        .current-values {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .value-box {
+            text-align: center;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+        
+        .value-box .label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .value-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #343a40;
+        }
+        
+        .value-box .max-value {
+            color: #dc3545;
+        }
+        
+        /* Toast container */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+        
+        /* Refresh button animation */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .rotating {
+            animation: rotate 0.5s linear;
+        }
+        
+        /* Stats cards */
+        .stats-card {
+            padding: 20px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+        
+        .stats-card.primary { background: linear-gradient(135deg, #007bff 0%, #6610f2 100%); }
+        .stats-card.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .stats-card.warning { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); }
+        .stats-card.danger { background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%); }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Date range picker */
+        .date-range-picker {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* Login Modal */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            width: 100%;
+            max-width: 460px;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #auth-tabs .nav-link {
+            font-weight: 600;
+        }
+
+        .login-card .form-control,
+        .login-card .form-select {
+            font-size: 16px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .display-4 {
+                font-size: 2.5rem;
+            }
+            
+            .current-values {
+                gap: 10px;
+            }
+            
+            .value-box {
+                min-width: 100px;
+                padding: 8px 12px;
+            }
+            
+            .date-range-picker {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .login-card {
+                padding: 20px;
+                margin: 0;
+                max-width: 100%;
+                max-height: calc(100vh - 32px);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .login-modal {
+                align-items: flex-start;
+                padding: 10px;
+            }
+
+            .login-card {
+                border-radius: 12px;
+                padding: 16px;
+                max-height: calc(100vh - 20px);
+            }
+
+            .login-card h2 {
+                font-size: 1.35rem;
+            }
+
+            #auth-tabs .nav-link {
+                font-size: 0.9rem;
+                padding: 0.45rem 0.5rem;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Footer */
+        .footer {
+            border-top: 1px solid #dee2e6;
+            margin-top: 20px;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+        
+        /* Floating refresh button */
+        #refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* Form improvements */
+        .form-control:focus, .form-select:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+        
+        /* Tab content animations */
+        .tab-pane {
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Loading spinner */
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .health-summary-card {
+            border-left: 4px solid #dc3545;
+            background: linear-gradient(180deg, #fff 0%, #fff5f5 100%);
+        }
+
+        .health-summary-card.healthy {
+            border-left-color: #198754;
+            background: linear-gradient(180deg, #fff 0%, #f2fff7 100%);
+        }
+
+        .sensor-health-list .list-group-item {
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            margin-bottom: 12px;
+            border-radius: 10px;
+        }
+
+        .sensor-issue-list {
+            margin: 0;
+            padding-left: 1rem;
+        }
+
+        .sensor-issue-list li + li {
+            margin-top: 0.35rem;
+        }
+         
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="spinner-overlay d-none">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Login Modal (shown by default) -->
+    <div id="login-modal" class="login-modal">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <i class="fas fa-mountain fa-3x text-primary mb-3"></i>
+                <h2>Landslide EWS Login</h2>
+                <p class="text-muted">Enter your credentials to access the dashboard</p>
+            </div>
+            
+            <div class="nav nav-pills nav-fill mb-3" id="auth-tabs" role="tablist">
+                <button type="button" class="nav-link active" data-auth-tab="login">Login</button>
+                <button type="button" class="nav-link" data-auth-tab="register">Register</button>
+            </div>
+
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="login-identifier" class="form-label">Username, Email, or Mobile Number</label>
+                    <input type="text" class="form-control" id="login-identifier" placeholder="Enter username, email, or mobile number" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="login-password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="login-password" placeholder="Enter password" required>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember-me">
+                    <label class="form-check-label" for="remember-me">Remember me</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 mb-3">
+                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                </button>
+
+                <div class="text-center">
+                    <button type="button" class="btn btn-link p-0" onclick="switchAuthTab('register')">
+                        New user? Register here
+                    </button>
+                </div>
+
+                <div class="text-center mt-1">
+                    <button type="button" class="btn btn-link" onclick="continueAsGuest()">
+                        Continue as Guest (View Only)
+                    </button>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Default admin: admin / Admin123!
+                    </small>
+                </div>
+            </form>
+
+            <form id="register-form" class="d-none">
+                <div class="mb-3">
+                    <label for="register-full-name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="register-full-name" placeholder="Enter full name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="register-username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="register-username" placeholder="Choose username" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="register-email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="register-email" placeholder="Enter email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="register-mobile-number" class="form-label">Mobile Number</label>
+                    <input type="tel" class="form-control" id="register-mobile-number" placeholder="Enter mobile number" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="register-password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="register-password" placeholder="At least 6 characters" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="register-confirm-password" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="register-confirm-password" placeholder="Re-enter password" required>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 mb-3">
+                    <i class="fas fa-user-plus me-2"></i> Create Account
+                </button>
+
+                <div class="text-center">
+                    <button type="button" class="btn btn-link p-0" onclick="switchAuthTab('login')">
+                        Already have an account? Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard (hidden until login) -->
+    <div id="dashboard-app" style="display: none;">
+        <!-- Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-mountain"></i> Landslide EWS
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="showSection('dashboard')">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('historical')">
+                                <i class="fas fa-chart-line"></i> Historical
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('alerts')">
+                                <i class="fas fa-bell"></i> Alerts
+                                <span id="alert-badge" class="badge bg-danger d-none">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('nodes')">
+                                <i class="fas fa-satellite-dish"></i> Nodes
+                            </a>
+                        </li>
+                        <li class="nav-item" id="admin-nav-item" style="display: none;">
+                            <a class="nav-link" href="#" onclick="showSection('admin')">
+                                <i class="fas fa-cogs"></i> Admin
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="navbar-nav ms-auto">
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle"></i> <span id="current-username">Guest</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="showProfile()"><i class="fas fa-user"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="showSettings()"><i class="fas fa-cog"></i> Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="container-fluid py-3">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+                        <p class="text-muted">Real-time monitoring of landslide risk parameters</p>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-lg-5 col-md-6 mb-3">
+                        <label class="form-label">Currently Selected Node Dashboard</label>
+                        <div class="form-control bg-light" id="selectedDashboardDisplay">Selected Node ID: -- | Selected Node Name: --</div>
+                    </div>
+                    <div class="col-lg-5 col-md-6 mb-3">
+                        <label for="dashboardNodeSelect" class="form-label">Choose Node Dashboard</label>
+                        <select class="form-select" id="dashboardNodeSelect">
+                            <option value="">Choose a node dashboard</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-12 mb-3 d-flex align-items-end">
+                        <button class="btn btn-outline-primary w-100" type="button" onclick="loadDashboardData()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh View
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Risk Level Card -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card risk-level-card normal" id="risk-level-card">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">Current Landslide Risk Level</h3>
+                                <div class="display-1 fw-bold" id="risk-level-text">NORMAL</div>
+                                <div class="progress" style="height: 30px;">
+                                    <div id="risk-progress" class="progress-bar bg-success" role="progressbar" style="width: 10%">10%</div>
+                                </div>
+                                <p class="mt-2" id="risk-message">All parameters within normal range</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sensor Data Cards -->
+                <div class="row mb-4">
+                    <!-- Rainfall -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-cloud-rain text-primary"></i> Rainfall</h5>
+                                    <span class="badge bg-primary" id="rainfall-unit">mm/hr</span>
+                                </div>
+                                <h2 class="display-4 fw-bold text-center" id="rainfall-value">--</h2>
+                                <div class="text-center">
+                                    <small class="text-muted">Last Hour: <span id="rainfall-hour">--</span> mm</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Soil Moisture -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-tint text-info"></i> Soil Moisture</h5>
+                                    <span class="badge bg-info">%</span>
+                                </div>
+                                <h2 class="display-4 fw-bold text-center" id="soil-moisture-value">--</h2>
+                                <div class="progress mt-2">
+                                    <div id="soil-progress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tilt -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-balance-scale text-warning"></i> Slope Tilt</h5>
+                                    <span class="badge bg-warning">degrees</span>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h4 class="fw-bold" id="tilt-x-value">--</h4>
+                                        <small>X-Axis</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="fw-bold" id="tilt-y-value">--</h4>
+                                        <small>Y-Axis</small>
+                                    </div>
+                                </div>
+                                <div id="tilt-indicator" class="text-center mt-2">
+                                    <i class="fas fa-square fa-2x" style="color: #28a745;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vibration -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-wave-square text-danger"></i> Vibration</h5>
+                                    <span class="badge bg-danger">g</span>
+                                </div>
+                                <h2 class="display-4 fw-bold text-center" id="vibration-value">--</h2>
+                                <div class="progress mt-2">
+                                    <div id="vibration-progress" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">Peak: <span id="vibration-peak">--</span> g</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Row of Sensor Cards -->
+                <div class="row mb-4">
+                    <!-- Temperature & Humidity -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-thermometer-half text-warning"></i> Temperature</h5>
+                                </div>
+                                <h2 class="display-4 fw-bold text-center" id="temperature-value">--</h2>
+                                <div class="text-center">
+                                    <small class="text-muted">Pressure: <span id="pressure-value">--</span> hPa</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Node Status -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-satellite-dish text-success"></i> Node Status</h5>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <h4 class="fw-bold" id="active-nodes">0</h4>
+                                        <small>Active</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="fw-bold" id="total-nodes">0</h4>
+                                        <small>Total</small>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <small class="text-muted" id="current-node-display">Selected Node ID: -- | Selected Node Name: --</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Statistics -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-database text-primary"></i> Data Points</h5>
+                                </div>
+                                <h2 class="display-4 fw-bold text-center" id="total-readings">0</h2>
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">Updated: <span id="data-update-time">--:--:--</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Uptime -->
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title"><i class="fas fa-clock text-info"></i> System Uptime</h5>
+                                </div>
+                                <h2 class="display-4 fw-bold text-center" id="system-uptime">00:00</h2>
+                                <div class="text-center mt-2">
+                                    <small class="text-muted">Refresh: <span id="refresh-rate">30s</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-cloud-rain"></i> Rainfall Monitoring</h5>
+                                <div class="time-filter">
+                                    <button class="time-filter-btn active" onclick="updateChartTimeRange('rainfallChart', '1h')">1H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('rainfallChart', '6h')">6H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('rainfallChart', '24h')">24H</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="rainfallChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="current-values">
+                                    <div class="value-box">
+                                        <div class="label">Current</div>
+                                        <div class="value" id="rain-current-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">24H Total</div>
+                                        <div class="value" id="rain-24h-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Status</div>
+                                        <div class="value" id="rain-status">NORMAL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-wave-square"></i> Vibration Monitoring</h5>
+                                <div class="time-filter">
+                                    <button class="time-filter-btn active" onclick="updateChartTimeRange('vibrationChart', '1h')">1H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('vibrationChart', '6h')">6H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('vibrationChart', '24h')">24H</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="vibrationChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="current-values">
+                                    <div class="value-box">
+                                        <div class="label">Current</div>
+                                        <div class="value" id="vib-current-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Threshold</div>
+                                        <div class="value max-value" id="vib-threshold">3.5g</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Status</div>
+                                        <div class="value" id="vib-status">NORMAL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More Charts -->
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-tint"></i> Soil Moisture Monitoring</h5>
+                                <div class="time-filter">
+                                    <button class="time-filter-btn active" onclick="updateChartTimeRange('soilChart', '1h')">1H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('soilChart', '6h')">6H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('soilChart', '24h')">24H</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="soilChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="current-values">
+                                    <div class="value-box">
+                                        <div class="label">Current</div>
+                                        <div class="value" id="soil-current-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Threshold</div>
+                                        <div class="value max-value" id="soil-threshold">75%</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Status</div>
+                                        <div class="value" id="soil-status">NORMAL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-balance-scale"></i> Tilt Monitoring</h5>
+                                <div class="time-filter">
+                                    <button class="time-filter-btn active" onclick="updateChartTimeRange('tiltChart', '1h')">1H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('tiltChart', '6h')">6H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('tiltChart', '24h')">24H</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="tiltChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="current-values">
+                                    <div class="value-box">
+                                        <div class="label">Current X</div>
+                                        <div class="value" id="tilt-x-current">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Current Y</div>
+                                        <div class="value" id="tilt-y-current">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Max Today</div>
+                                        <div class="value max-value" id="tilt-max">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Width Chart -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-chart-line"></i> Risk Trend Analysis</h5>
+                                <div class="time-filter">
+                                    <button class="time-filter-btn active" onclick="updateChartTimeRange('riskChart', '6h')">6H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('riskChart', '24h')">24H</button>
+                                    <button class="time-filter-btn" onclick="updateChartTimeRange('riskChart', '7d')">7D</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="riskChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="current-values">
+                                    <div class="value-box">
+                                        <div class="label">Current Risk</div>
+                                        <div class="value" id="current-risk-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Avg Risk</div>
+                                        <div class="value" id="avg-risk-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Peak Risk</div>
+                                        <div class="value max-value" id="peak-risk-value">--</div>
+                                    </div>
+                                    <div class="value-box">
+                                        <div class="label">Trend</div>
+                                        <div class="value" id="risk-trend">STABLE</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle"></i> Recent Alerts</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadRecentAlerts()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="alerts-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Type</th>
+                                                <th>Message</th>
+                                                <th>Severity</th>
+                                                <th>Node</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="alerts-body">
+                                            <tr><td colspan="7" class="text-center">Loading alerts...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historical Section -->
+            <div id="historical-section" class="section" style="display: none;">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Alerts Section -->
+            <div id="alerts-section" class="section" style="display: none;">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Nodes Section -->
+            <div id="nodes-section" class="section" style="display: none;">
+                <!-- Content loaded dynamically -->
+            </div>
+
+            <!-- Admin Section -->
+            <div id="admin-section" class="section" style="display: none;">
+                <!-- Content loaded dynamically -->
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer mt-auto py-3 bg-light">
+            <div class="container text-center">
+                <span class="text-muted">Landslide Early Warning System &copy; 2025-26 | 
+                    Last Updated: <span id="last-updated">--:--:--</span> | 
+                    Status: <span id="connection-status" class="badge bg-success">Connected</span> |
+                    WebSocket: <span id="connections-count">0</span> clients |
+                    Version: <span id="system-version">v1.0.0</span>
+                </span>
+            </div>
+        </footer>
+
+        <!-- Refresh Button -->
+        <button id="refresh-btn" class="btn btn-primary" onclick="loadDashboardData()" title="Refresh Data">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+    // Configuration
+    const APP_ORIGIN = window.location.origin;
+    const API_BASE_URL = `${APP_ORIGIN}/api`;
+
+    const CONFIG = {
+        API_BASE_URL, // Backend API URL
+        WS_URL: APP_ORIGIN, // Backend WebSocket URL
+        REFRESH_INTERVAL: 30000, // 30 seconds
+        CHART_TIME_RANGES: {
+            '1h': 'Last Hour',
+            '6h': 'Last 6 Hours',
+            '24h': 'Last 24 Hours',
+            '7d': 'Last 7 Days'
+        },
+        DEFAULT_NODE_ID: 'NODE-001'
+    };
+
+    // Global variables
+    let currentRiskLevel = 'normal';
+    let currentRiskScore = 0;
+    let socket = null;
+    let authToken = null;
+    let currentUser = null;
+    let refreshInterval = null;
+    let charts = {};
+    let systemUptimeStart = Date.now();
+    let dataPoints = 0;
+    let alertCount = 0;
+    let currentNodes = [];
+    let alertRulesCache = [];
+    let adminLocationsCache = [];
+    let adminUsersCache = [];
+    let latestSensorHealthReport = null;
+    let historicalChartInstance = null;
+    let dashboardCatalog = { locations: [], nodes: [] };
+    let selectedDashboardLocationId = '';
+    let selectedDashboardNodeId = '';
+    let activeSocketLocationId = null;
+    let suppressDashboardSelectorEvents = false;
+
+    // Initialize on page load
+    $(document).ready(function() {
+        console.log('🚀 Landslide EWS Dashboard initialized');
+        
+        // Check for saved login
+        checkSavedLogin();
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Initialize charts (will be loaded with real data)
+        initCharts();
+        
+        // Start system uptime counter
+        startUptimeCounter();
+    });
+
+    // Check saved login
+    function checkSavedLogin() {
+        const persistentToken = localStorage.getItem('authToken');
+        const persistentUser = localStorage.getItem('user');
+        const rememberMe = localStorage.getItem('rememberMe') === 'true';
+        const sessionToken = sessionStorage.getItem('authToken');
+        const sessionUser = sessionStorage.getItem('user');
+        const token = (persistentToken && rememberMe) ? persistentToken : sessionToken;
+        const user = (persistentUser && rememberMe) ? persistentUser : sessionUser;
+
+        if (token && user) {
+            authToken = token;
+            currentUser = JSON.parse(user);
+            showDashboard();
+        }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Login form submission
+        $('#login-form').on('submit', function(e) {
+            e.preventDefault();
+            handleLogin();
+        });
+
+        $('#register-form').on('submit', function(e) {
+            e.preventDefault();
+            handleRegistration();
+        });
+
+        $('[data-auth-tab]').on('click', function() {
+            switchAuthTab($(this).data('auth-tab'));
+        });
+
+        $(document).on('change', '#dashboardLocationSelect', handleDashboardLocationChange);
+        $(document).on('change', '#dashboardNodeSelect', handleDashboardNodeChange);
+        
+        // Keyboard shortcuts
+        $(document).on('keydown', function(e) {
+            // Ctrl+R or F5 to refresh
+            if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+                e.preventDefault();
+                if (currentUser) loadDashboardData();
+            }
+            // Ctrl+L to logout
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                logout();
+            }
+            // Ctrl+D for dashboard
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                showSection('dashboard');
+            }
+        });
+        
+        // Refresh button
+        $('#refresh-btn').on('click', function() {
+            loadDashboardData();
+            $(this).addClass('rotating');
+            setTimeout(() => $(this).removeClass('rotating'), 500);
+        });
+    }
+
+    function switchAuthTab(tab) {
+        const selectedTab = tab === 'register' ? 'register' : 'login';
+        $('[data-auth-tab]').removeClass('active');
+        $(`[data-auth-tab="${selectedTab}"]`).addClass('active');
+        $('#login-form').toggleClass('d-none', selectedTab !== 'login');
+        $('#register-form').toggleClass('d-none', selectedTab !== 'register');
+    }
+
+    function persistAuthSession(token, user, rememberMe = false) {
+        authToken = token;
+        currentUser = user;
+
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('rememberMe');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
+
+        if (rememberMe) {
+            localStorage.setItem('authToken', token);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('rememberMe', 'true');
+        } else {
+            sessionStorage.setItem('authToken', token);
+            sessionStorage.setItem('user', JSON.stringify(user));
+        }
+    }
+
+    // Handle login
+    async function handleLogin() {
+        const identifier = $('#login-identifier').val().trim();
+        const password = $('#login-password').val();
+        const rememberMe = $('#remember-me').is(':checked');
+        
+        if (!identifier || !password) {
+            showToast('Please enter your username, email, or mobile number and password', 'warning');
+            return;
+        }
+        
+        showLoading();
+        
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ identifier, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                persistAuthSession(data.token, data.user, rememberMe);
+                showDashboard();
+                showToast('Login successful!', 'success');
+            } else {
+                showToast(data.error || 'Login failed', 'danger');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            showToast('Login failed: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Continue as guest
+    function continueAsGuest() {
+        currentUser = { role: 'visitor', full_name: 'Guest User' };
+        showDashboard();
+        showToast('Continuing as guest (view only)', 'info');
+    }
+
+    // Show dashboard after login
+    function showDashboard() {
+        $('#login-modal').hide();
+        $('#dashboard-app').show();
+        
+        updateUIAfterLogin();
+        loadDashboardCatalog()
+            .catch((error) => {
+                console.error('Error loading dashboard catalog:', error);
+            })
+            .finally(() => {
+                initSocketConnection();
+                startAutoRefresh();
+                loadDashboardData();
+                loadRecentAlerts();
+            });
+    }
+
+    async function loadDashboardCatalog(preferredLocationId = '') {
+        const queryParams = new URLSearchParams();
+        if (preferredLocationId) {
+            queryParams.set('location_id', preferredLocationId);
+        }
+
+        const response = await fetch(
+            `${CONFIG.API_BASE_URL}/dashboard/catalog${queryParams.toString() ? `?${queryParams}` : ''}`,
+            { headers: getAuthHeaders() }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load dashboard catalog');
+        }
+
+        setDashboardCatalog(data.locations || [], data.nodes || []);
+        return dashboardCatalog;
+    }
+
+    function setDashboardCatalog(locations, nodes) {
+        dashboardCatalog = {
+            locations: Array.isArray(locations) ? locations : [],
+            nodes: Array.isArray(nodes) ? nodes : []
+        };
+
+        normalizeDashboardSelection();
+        renderDashboardSelectors();
+    }
+
+    function normalizeDashboardSelection() {
+        const locations = dashboardCatalog.locations || [];
+        const nodes = dashboardCatalog.nodes || [];
+        const selectedNode = nodes.find((node) => node.node_id === selectedDashboardNodeId);
+
+        if (selectedNode) {
+            selectedDashboardLocationId = String(selectedNode.location_id || '');
+        }
+
+        if (!selectedNode && selectedDashboardNodeId) {
+            selectedDashboardNodeId = '';
+        }
+
+        if (selectedDashboardLocationId) {
+            const matchingLocation = locations.find((location) => String(location.id) === String(selectedDashboardLocationId));
+            if (!matchingLocation) {
+                selectedDashboardLocationId = '';
+            }
+        }
+
+        if (!selectedDashboardLocationId && !selectedDashboardNodeId) {
+            const defaultNode = nodes.find((node) => node.node_id === CONFIG.DEFAULT_NODE_ID);
+            if (defaultNode) {
+                selectedDashboardNodeId = defaultNode.node_id;
+                selectedDashboardLocationId = String(defaultNode.location_id || '');
+                return;
+            }
+
+            if (locations.length > 0) {
+                selectedDashboardLocationId = String(locations[0].id);
+                const firstLocationNodes = getDashboardNodesForLocation(selectedDashboardLocationId);
+                if (firstLocationNodes.length > 0) {
+                    selectedDashboardNodeId = firstLocationNodes[0].node_id;
+                }
+            }
+        }
+    }
+
+    function getDashboardNodesForLocation(locationId) {
+        if (!locationId) {
+            return dashboardCatalog.nodes || [];
+        }
+
+        return (dashboardCatalog.nodes || []).filter(
+            (node) => String(node.location_id) === String(locationId)
+        );
+    }
+
+    function renderDashboardSelectors() {
+        suppressDashboardSelectorEvents = true;
+
+        const locationOptions = ['<option value="">All Locations</option>']
+            .concat(
+                (dashboardCatalog.locations || []).map((location) => {
+                    const label = location.region
+                        ? `${location.name} (${location.region})`
+                        : location.name;
+                    return `<option value="${location.id}">${label}</option>`;
+                })
+            );
+
+        $('#dashboardLocationSelect').html(locationOptions.join(''));
+        $('#dashboardLocationSelect').val(selectedDashboardLocationId || '');
+
+        const nodeOptions = ['<option value="">Choose a node dashboard</option>']
+            .concat(
+                (dashboardCatalog.nodes || []).map((node) => {
+                    const label = node.name
+                        ? `${node.node_id} - ${node.name}`
+                        : node.node_id;
+                    return `<option value="${node.node_id}">${label}</option>`;
+                })
+            );
+
+        $('#dashboardNodeSelect').html(nodeOptions.join(''));
+        $('#dashboardNodeSelect').val(selectedDashboardNodeId || '');
+
+        suppressDashboardSelectorEvents = false;
+    }
+
+    function getDashboardSelectionQuery() {
+        const queryParams = new URLSearchParams();
+        if (selectedDashboardLocationId) {
+            queryParams.set('location_id', selectedDashboardLocationId);
+        }
+        if (selectedDashboardNodeId) {
+            queryParams.set('node_id', selectedDashboardNodeId);
+        }
+        return queryParams;
+    }
+
+    function getActiveDashboardLocationId() {
+        if (selectedDashboardNodeId) {
+            const selectedNode = (dashboardCatalog.nodes || []).find(
+                (node) => node.node_id === selectedDashboardNodeId
+            );
+            if (selectedNode) {
+                return String(selectedNode.location_id || '');
+            }
+        }
+
+        return selectedDashboardLocationId ? String(selectedDashboardLocationId) : '';
+    }
+
+    function getActiveDashboardNodeId() {
+        return selectedDashboardNodeId || '';
+    }
+
+    function getSelectedDashboardNodeDetails() {
+        const selectedNode = (dashboardCatalog.nodes || []).find(
+            (node) => node.node_id === selectedDashboardNodeId
+        );
+
+        if (selectedNode) {
+            return {
+                node_id: selectedNode.node_id || '',
+                node_name: selectedNode.name || ''
+            };
+        }
+
+        return {
+            node_id: '',
+            node_name: ''
+        };
+    }
+
+    function updateSelectedNodeDisplay(nodeId = '', nodeName = '') {
+        const normalizedNodeId = String(nodeId || '').trim();
+        const normalizedNodeName = String(nodeName || '').trim();
+        const displayText = (!normalizedNodeId && !normalizedNodeName)
+            ? 'Selected Node ID: -- | Selected Node Name: --'
+            : `Selected Node ID: ${normalizedNodeId || '--'} | Selected Node Name: ${normalizedNodeName || '--'}`;
+
+        $('#current-node-display').text(displayText);
+        $('#selectedDashboardDisplay').text(displayText);
+    }
+
+    async function handleDashboardLocationChange() {
+        if (suppressDashboardSelectorEvents) return;
+
+        selectedDashboardLocationId = $('#dashboardLocationSelect').val() || '';
+        const availableNodes = getDashboardNodesForLocation(selectedDashboardLocationId);
+        selectedDashboardNodeId = availableNodes.length > 0 ? availableNodes[0].node_id : '';
+        renderDashboardSelectors();
+        updateSocketLocationRoom();
+
+        if ($('#historicalNode').length) {
+            await populateHistoricalNodes();
+        }
+
+        loadDashboardData();
+        loadRecentAlerts();
+    }
+
+    async function handleDashboardNodeChange() {
+        if (suppressDashboardSelectorEvents) return;
+
+        selectedDashboardNodeId = $('#dashboardNodeSelect').val() || '';
+        const selectedNode = (dashboardCatalog.nodes || []).find(
+            (node) => node.node_id === selectedDashboardNodeId
+        );
+
+        if (selectedNode) {
+            selectedDashboardLocationId = String(selectedNode.location_id || '');
+        }
+
+        renderDashboardSelectors();
+        updateSocketLocationRoom();
+
+        if ($('#historicalNode').length) {
+            await populateHistoricalNodes();
+        }
+
+        loadDashboardData();
+        loadRecentAlerts();
+    }
+
+    function openNodeDashboard(locationId, nodeId) {
+        selectedDashboardLocationId = locationId ? String(locationId) : '';
+        selectedDashboardNodeId = nodeId || '';
+        renderDashboardSelectors();
+        updateSocketLocationRoom();
+        showSection('dashboard');
+    }
+
+    function updateSocketLocationRoom() {
+        const nextLocationId = getActiveDashboardLocationId();
+
+        if (!socket || !socket.connected) {
+            activeSocketLocationId = nextLocationId || null;
+            return;
+        }
+
+        if (activeSocketLocationId && String(activeSocketLocationId) !== String(nextLocationId || '')) {
+            socket.emit('leave-location', activeSocketLocationId);
+        }
+
+        if (nextLocationId && String(activeSocketLocationId || '') !== String(nextLocationId)) {
+            socket.emit('join-location', nextLocationId);
+        }
+
+        activeSocketLocationId = nextLocationId || null;
+    }
+
+    // Initialize charts with empty data
+    function initCharts() {
+        // Rainfall Chart
+        const rainfallCtx = document.getElementById('rainfallChart').getContext('2d');
+        charts.rainfallChart = new Chart(rainfallCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Rainfall (mm/hr)',
+                    data: [],
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: getChartOptions('mm/hr')
+        });
+
+        // Vibration Chart
+        const vibrationCtx = document.getElementById('vibrationChart').getContext('2d');
+        charts.vibrationChart = new Chart(vibrationCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Vibration (g)',
+                    data: [],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: getChartOptions('g')
+        });
+
+        // Soil Moisture Chart
+        const soilCtx = document.getElementById('soilChart').getContext('2d');
+        charts.soilChart = new Chart(soilCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Soil Moisture (%)',
+                    data: [],
+                    borderColor: '#17a2b8',
+                    backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: getChartOptions('%')
+        });
+
+        // Tilt Chart
+        const tiltCtx = document.getElementById('tiltChart').getContext('2d');
+        charts.tiltChart = new Chart(tiltCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Tilt X (°)',
+                        data: [],
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Tilt Y (°)',
+                        data: [],
+                        borderColor: '#fd7e14',
+                        backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: getChartOptions('°')
+        });
+
+        // Risk Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        charts.riskChart = new Chart(riskCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Risk Level (%)',
+                    data: [],
+                    borderColor: '#6f42c1',
+                    backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Risk %' },
+                        grid: { color: 'rgba(0,0,0,0.1)' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Time' },
+                        grid: { color: 'rgba(0,0,0,0.1)' }
+                    }
+                }
+            }
+        });
+    }
+
+    function getChartOptions(yAxisLabel) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: yAxisLabel },
+                    grid: { color: 'rgba(0,0,0,0.1)' }
+                },
+                x: {
+                    title: { display: true, text: 'Time' },
+                    grid: { color: 'rgba(0,0,0,0.1)' }
+                }
+            }
+        };
+    }
+
+    // Loading functions
+    function showLoading() {
+        $('#loading-spinner').removeClass('d-none');
+    }
+
+    function hideLoading() {
+        $('#loading-spinner').addClass('d-none');
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast" role="alert" data-bs-delay="5000">
+                <div class="toast-header bg-${type} text-white">
+                    <strong class="me-auto">Landslide EWS</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        $('#toast-container').append(toastHtml);
+        const toast = new bootstrap.Toast(document.getElementById(toastId));
+        toast.show();
+        
+        // Remove toast after it's hidden
+        $(`#${toastId}`).on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+
+    // Authentication functions
+    function updateUIAfterLogin() {
+        // Update username display
+        $('#current-username').text(currentUser.full_name || currentUser.username || 'Guest');
+        
+        // Show/hide admin menu based on role
+        if (currentUser.role === 'admin') {
+            $('#admin-nav-item').show();
+        } else {
+            $('#admin-nav-item').hide();
+        }
+        
+        // Update footer
+        updateFooter();
+    }
+
+    async function logout() {
+        try {
+            if (authToken) {
+                await fetch(`${CONFIG.API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        
+        // Clear storage
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('rememberMe');
+        sessionStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
+        
+        // Clear interval
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+        
+        // Disconnect socket
+        if (socket) {
+            socket.disconnect();
+        }
+        
+        // Reset variables
+        authToken = null;
+        currentUser = null;
+        
+        // Show login modal
+        $('#dashboard-app').hide();
+        $('#login-modal').show();
+        
+        // Clear form
+        $('#login-identifier').val('');
+        $('#login-password').val('');
+        
+        showToast('Logged out successfully', 'info');
+    }
+
+    // Socket.io functions - UPDATED FOR BACKEND COMPATIBILITY
+    function initSocketConnection() {
+        if (!currentUser) return;
+        
+        // Connect to WebSocket server
+        socket = io(CONFIG.WS_URL, {
+            auth: {
+                token: authToken || 'guest'
+            },
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
+        
+        socket.on('connect', () => {
+            console.log('✅ Connected to server via Socket.io');
+            updateConnectionStatus(true);
+            
+            updateSocketLocationRoom();
+        });
+        
+        socket.on('sensor-update', (data) => {
+            console.log('Sensor update:', data);
+            updateSensorCards(data);
+            updateChartsWithLiveData(data);
+        });
+        
+        socket.on('risk-update', (data) => {
+            console.log('Risk update:', data);
+            updateRiskCard(data.risk_score, data.risk_level);
+        });
+        
+        // CHANGED: 'new-alert' (singular) instead of 'new-alerts'
+        socket.on('new-alert', (alert) => {
+            console.log('New alert:', alert);
+            addAlertToTable(alert);
+            updateAlertBadge(alertCount + 1);
+            playAlertSound();
+        });
+        
+        socket.on('node-status-update', (data) => {
+            console.log('Node status update:', data);
+            updateNodeStatusDisplay();
+        });
+        
+        socket.on('connections-update', (data) => {
+            $('#connections-count').text(data.count);
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            activeSocketLocationId = null;
+            updateConnectionStatus(false);
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            updateConnectionStatus(false);
+        });
+    }
+
+    // NEW FUNCTION: Add single alert to table
+    function addAlertToTable(alert) {
+        const tbody = $('#alerts-body');
+        const time = new Date(alert.created_at).toLocaleTimeString();
+        const severityBadge = `<span class="badge bg-${getSeverityColor(alert.severity)}">${alert.severity.toUpperCase()}</span>`;
+        const statusBadge = '<span class="badge bg-warning">Pending</span>';
+        
+        const newRow = `
+            <tr class="alert-row" data-id="${alert.id}">
+                <td>${time}</td>
+                <td>${alert.alert_type || 'Unknown'}</td>
+                <td>${alert.message || 'No message'}</td>
+                <td>${severityBadge}</td>
+                <td>${alert.location_name || alert.node_id || 'Unknown'}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    ${canAcknowledgeAlerts() ? `
+                    <button class="btn btn-sm btn-outline-primary" onclick="acknowledgeAlert(${alert.id})" title="Acknowledge">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+        
+        // Add to top of table
+        tbody.prepend(newRow);
+    }
+
+    function updateConnectionStatus(connected) {
+        const statusElement = $('#connection-status');
+        if (connected) {
+            statusElement.removeClass('bg-danger').addClass('bg-success').text('Connected');
+        } else {
+            statusElement.removeClass('bg-success').addClass('bg-danger').text('Disconnected');
+        }
+    }
+
+    // Auto-refresh functions
+    function startAutoRefresh() {
+        // Clear existing interval
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+        
+        // Set new interval
+        const interval = CONFIG.REFRESH_INTERVAL;
+        refreshInterval = setInterval(() => {
+            loadDashboardData();
+            loadRecentAlerts();
+        }, interval);
+        
+        $('#refresh-rate').text(`${interval/1000}s`);
+        console.log(`🔄 Auto-refresh started (${interval/1000}s interval)`);
+    }
+
+    // Dashboard functions
+    async function loadDashboardData() {
+        if (!currentUser) return;
+        
+        showLoading();
+        
+        try {
+            const queryParams = getDashboardSelectionQuery();
+
+            // Get dashboard overview
+            const response = await fetch(`${CONFIG.API_BASE_URL}/dashboard/overview${queryParams.toString() ? `?${queryParams}` : ''}`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                updateDashboard(data);
+                updateLastUpdated();
+            } else {
+                throw new Error(data.error || 'Failed to load dashboard data');
+            }
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            showToast('Failed to load dashboard data: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function updateDashboard(data) {
+        if (Array.isArray(data.available_locations)) {
+            setDashboardCatalog(data.available_locations, data.available_nodes || []);
+        } else if (data.selection) {
+            if (data.selection.location_id !== undefined && data.selection.location_id !== null) {
+                selectedDashboardLocationId = String(data.selection.location_id);
+            }
+            if (data.selection.node_id !== undefined && data.selection.node_id !== null) {
+                selectedDashboardNodeId = data.selection.node_id;
+            }
+            renderDashboardSelectors();
+        }
+
+        if (data.selection) {
+            updateSelectedNodeDisplay(data.selection.node_id, data.selection.node_name);
+        } else {
+            const selectedNode = getSelectedDashboardNodeDetails();
+            updateSelectedNodeDisplay(selectedNode.node_id, selectedNode.node_name);
+        }
+
+        // Update overall risk
+        if (data.overview && data.overview.overall_risk) {
+            currentRiskScore = data.overview.overall_risk.score;
+            currentRiskLevel = data.overview.overall_risk.level;
+            updateRiskCard(currentRiskScore, currentRiskLevel);
+        }
+        
+        // Update sensor values
+        if (data.latest_data && data.latest_data.length > 0) {
+            const mainNodeData = data.latest_data[0];
+            updateSensorCards(mainNodeData);
+        }
+        
+        // Update recent alerts
+        if (data.recent_alerts) {
+            updateRecentAlerts(data.recent_alerts);
+            updateAlertBadge(data.recent_alerts.length);
+        }
+        
+        // Update node status
+        if (data.overview && data.overview.node_status) {
+            updateNodeStatus(data.overview.node_status);
+        }
+        
+        // Update statistics
+        if (data.overview && data.overview.statistics) {
+            $('#total-readings').text(data.overview.statistics.total_readings || 0);
+            $('#active-nodes').text(data.overview.node_status.online || 0);
+            $('#total-nodes').text(data.overview.node_status.total || 0);
+        }
+        
+        // Update charts with real data
+        if (data.latest_data && data.latest_data.length > 0) {
+            updateChartsWithLiveData(data.latest_data[0]);
+        }
+    }
+
+    function updateRiskCard(score, level) {
+        const riskCard = $('#risk-level-card');
+        const riskText = $('#risk-level-text');
+        const riskProgress = $('#risk-progress');
+        const riskMessage = $('#risk-message');
+        
+        // Remove all risk classes
+        riskCard.removeClass('normal low medium high critical');
+        
+        // Add current risk class
+        riskCard.addClass(level);
+        
+        // Update text and progress
+        riskText.text(level.toUpperCase());
+        riskProgress.css('width', `${score}%`);
+        riskProgress.text(`${score}%`);
+        $('#current-risk-value').text(`${score}%`);
+        
+        // Update progress bar color based on level
+        riskProgress.removeClass('bg-success bg-warning bg-danger bg-info');
+        switch(level) {
+            case 'normal':
+                riskProgress.addClass('bg-success');
+                riskMessage.text('All parameters within normal range');
+                $('#risk-trend').text('STABLE').css('color', '#28a745');
+                break;
+            case 'low':
+                riskProgress.addClass('bg-info');
+                riskMessage.text('Slight elevation in some parameters');
+                $('#risk-trend').text('STABLE').css('color', '#17a2b8');
+                break;
+            case 'medium':
+                riskProgress.addClass('bg-warning');
+                riskMessage.text('Moderate risk - monitor closely');
+                $('#risk-trend').text('INCREASING').css('color', '#ffc107');
+                break;
+            case 'high':
+                riskProgress.addClass('bg-danger');
+                riskMessage.text('High risk - prepare for action');
+                $('#risk-trend').text('INCREASING').css('color', '#dc3545');
+                break;
+            case 'critical':
+                riskProgress.addClass('bg-danger');
+                riskMessage.text('CRITICAL RISK - Immediate action required!');
+                $('#risk-trend').text('RAPID INCREASE').css('color', '#dc3545');
+                triggerCriticalAlert();
+                break;
+        }
+    }
+
+    function updateSensorCards(data) {
+    if (!data) return;
+
+    // Normalize values (CRITICAL FIX)
+    const rainfall = Number(data.rainfall ?? NaN);
+    const soil = Number(data.soil_moisture ?? NaN);
+    const tiltX = Number(data.tilt_x ?? NaN);
+    const tiltY = Number(data.tilt_y ?? NaN);
+    const vibration = Number(data.vibration ?? NaN);
+    const temperature = Number(data.temperature ?? NaN);
+    const pressure = Number(data.pressure ?? NaN);
+
+    // Rainfall
+    $('#rainfall-value').text(Number.isFinite(rainfall) ? rainfall.toFixed(1) : '--');
+    $('#rainfall-hour').text(Number.isFinite(rainfall) ? rainfall.toFixed(1) : '--');
+    $('#rain-current-value').text(Number.isFinite(rainfall) ? rainfall.toFixed(1) + ' mm/hr' : '--');
+    $('#rain-24h-value').text(Number.isFinite(rainfall) ? (rainfall * 24).toFixed(1) + ' mm' : '--');
+
+    // Soil Moisture
+    $('#soil-moisture-value').text(Number.isFinite(soil) ? soil.toFixed(1) : '--');
+    $('#soil-progress').css('width', `${Number.isFinite(soil) ? soil : 0}%`);
+    $('#soil-current-value').text(Number.isFinite(soil) ? soil.toFixed(1) + '%' : '--');
+
+    // Tilt
+    $('#tilt-x-value').text(Number.isFinite(tiltX) ? tiltX.toFixed(1) : '--');
+    $('#tilt-y-value').text(Number.isFinite(tiltY) ? tiltY.toFixed(1) : '--');
+    $('#tilt-x-current').text(Number.isFinite(tiltX) ? tiltX.toFixed(1) + '°' : '--');
+    $('#tilt-y-current').text(Number.isFinite(tiltY) ? tiltY.toFixed(1) + '°' : '--');
+    updateTiltIndicator(tiltX, tiltY);
+
+    // Vibration
+    $('#vibration-value').text(Number.isFinite(vibration) ? vibration.toFixed(2) : '--');
+    $('#vibration-peak').text(Number.isFinite(vibration) ? (vibration * 1.2).toFixed(2) : '--');
+    $('#vibration-progress').css('width', `${Math.min(100, Number.isFinite(vibration) ? vibration * 20 : 0)}%`);
+    $('#vib-current-value').text(Number.isFinite(vibration) ? vibration.toFixed(2) + ' g' : '--');
+
+    // Temperature & Pressure
+    $('#temperature-value').text(Number.isFinite(temperature) ? temperature.toFixed(1) : '--');
+    $('#pressure-value').text(Number.isFinite(pressure) ? pressure.toFixed(1) : '--');
+
+    updateSelectedNodeDisplay(data.node_id, data.node_name);
+
+    updateStatusIndicators({
+        rainfall,
+        soil_moisture: soil,
+        vibration,
+        temperature,
+        pressure,
+        tilt_x: tiltX,
+        tilt_y: tiltY
+    });
+}
+
+    
+
+    function updateStatusIndicators(data) {
+        // Rainfall status
+        if (data.rainfall > 25) {
+            $('#rain-status').text('HIGH').css('color', '#dc3545');
+        } else if (data.rainfall > 15) {
+            $('#rain-status').text('MEDIUM').css('color', '#ffc107');
+        } else {
+            $('#rain-status').text('NORMAL').css('color', '#28a745');
+        }
+        
+        // Vibration status
+        if (data.vibration > 3.5) {
+            $('#vib-status').text('HIGH').css('color', '#dc3545');
+        } else if (data.vibration > 2.0) {
+            $('#vib-status').text('MEDIUM').css('color', '#ffc107');
+        } else {
+            $('#vib-status').text('NORMAL').css('color', '#28a745');
+        }
+        
+        // Soil moisture status
+        if (data.soil_moisture > 75) {
+            $('#soil-status').text('HIGH').css('color', '#dc3545');
+        } else if (data.soil_moisture > 60) {
+            $('#soil-status').text('MEDIUM').css('color', '#ffc107');
+        } else {
+            $('#soil-status').text('NORMAL').css('color', '#28a745');
+        }
+    }
+
+    function updateTiltIndicator(tiltX, tiltY) {
+        const indicator = $('#tilt-indicator');
+        const maxTilt = Math.max(Math.abs(tiltX || 0), Math.abs(tiltY || 0));
+        
+        let color = '#28a745'; // green
+        if (maxTilt > 5) color = '#dc3545'; // red
+        else if (maxTilt > 3) color = '#ffc107'; // yellow
+        
+        // Update max tilt
+        $('#tilt-max').text(maxTilt.toFixed(1) + '°');
+        
+        // Create a simple visual indicator
+        indicator.html(`
+            <div style="position: relative; width: 60px; height: 60px; margin: 0 auto; background: #f8f9fa; border-radius: 8px;">
+                <div style="position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; 
+                    background: ${color}; transform: translate(-50%, -50%) rotateX(${tiltY || 0}deg) rotateY(${tiltX || 0}deg);
+                    border-radius: 4px; transition: transform 0.5s;">
+                </div>
+            </div>
+        `);
+    }
+
+    async function loadRecentAlerts() {
+        try {
+            const queryParams = getDashboardSelectionQuery();
+            const response = await fetch(`${CONFIG.API_BASE_URL}/alerts/unacknowledged${queryParams.toString() ? `?${queryParams}` : ''}`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    updateRecentAlerts(data.alerts || []);
+                    updateAlertBadge(data.count || 0);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading alerts:', error);
+        }
+    }
+
+    function updateRecentAlerts(alerts) {
+        const tbody = $('#alerts-body');
+        
+        if (!alerts || alerts.length === 0) {
+            tbody.html('<tr><td colspan="7" class="text-center">No alerts to display</td></tr>');
+            return;
+        }
+        
+        let html = '';
+        alerts.forEach(alert => {
+            const time = new Date(alert.created_at).toLocaleTimeString();
+            const severityBadge = `<span class="badge bg-${getSeverityColor(alert.severity)}">${alert.severity.toUpperCase()}</span>`;
+            const statusBadge = alert.is_acknowledged ? 
+                '<span class="badge bg-success">Acknowledged</span>' : 
+                '<span class="badge bg-warning">Pending</span>';
+            
+            html += `
+                <tr class="alert-row" data-id="${alert.id}">
+                    <td>${time}</td>
+                    <td>${alert.alert_type || 'Unknown'}</td>
+                    <td>${alert.message || 'No message'}</td>
+                    <td>${severityBadge}</td>
+                    <td>${alert.location_name || alert.node_id || 'Unknown'}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        ${!alert.is_acknowledged && canAcknowledgeAlerts() ? `
+                        <button class="btn btn-sm btn-outline-primary" onclick="acknowledgeAlert(${alert.id})" title="Acknowledge">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.html(html);
+    }
+
+    function getSeverityColor(severity) {
+        switch(severity?.toLowerCase()) {
+            case 'critical': return 'danger';
+            case 'high': return 'danger';
+            case 'medium': return 'warning';
+            case 'low': return 'info';
+            default: return 'secondary';
+        }
+    }
+
+    function formatDateTime(value) {
+        if (!value) return 'Never';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Unknown';
+        return date.toLocaleString();
+    }
+
+    function formatRelativeTime(value) {
+        if (!value) return 'Never';
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'Unknown';
+
+        const diffMs = Date.now() - date.getTime();
+        if (diffMs < 0) return 'Just now';
+
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes} min ago`;
+
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hr ago`;
+
+        const days = Math.floor(hours / 24);
+        return `${days} day(s) ago`;
+    }
+
+    function renderSensorHealthPanel(report) {
+        if (!report) {
+            return `
+                <div class="alert alert-secondary mb-0">
+                    Sensor health data is not available yet.
+                </div>
+            `;
+        }
+
+        const summaryClass = report.unhealthy_nodes > 0 ? '' : 'healthy';
+        const summaryBadge = report.unhealthy_nodes > 0
+            ? `<span class="badge bg-danger">${report.unhealthy_nodes} failing</span>`
+            : '<span class="badge bg-success">All healthy</span>';
+
+        const reportList = (report.reports || [])
+            .filter(sensor => sensor.issues && sensor.issues.length > 0)
+            .map(sensor => {
+                const issueItems = sensor.issues.map(issue => `
+                    <li>
+                        <span class="badge bg-${getSeverityColor(issue.severity)} me-2">${String(issue.severity || '').toUpperCase()}</span>
+                        ${issue.message}
+                    </li>
+                `).join('');
+
+                return `
+                    <div class="list-group-item">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                            <div>
+                                <h6 class="mb-1">${sensor.name}</h6>
+                                <div class="text-muted small">
+                                    ${sensor.node_id} | ${sensor.location_name || 'Unknown location'} | ${sensor.sensor_type || 'unknown'}
+                                </div>
+                            </div>
+                            <div class="text-end small text-muted">
+                                <div>Last seen: ${formatRelativeTime(sensor.last_seen)}</div>
+                                <div>Latest reading: ${formatRelativeTime(sensor.latest_reading_at)}</div>
+                            </div>
+                        </div>
+                        <ul class="sensor-issue-list mt-3">
+                            ${issueItems}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
+
+        return `
+            <div class="card health-summary-card ${summaryClass}">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <h5 class="mb-1"><i class="fas fa-heartbeat me-2"></i>Sensor Health Report</h5>
+                        <div class="text-muted small">
+                            Checked: ${formatDateTime(report.checked_at)} | Alerts created: ${report.created_alerts || 0}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="mb-1">${summaryBadge}</div>
+                        <div class="small text-muted">
+                            Healthy: ${report.healthy_nodes}/${report.total_nodes}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 mb-3">
+                <div class="small text-muted">
+                    Admins receive sensor health alerts for offline nodes, stale data, missing readings, low battery, and config issues.
+                </div>
+                <button class="btn btn-outline-danger btn-sm" onclick="runSensorHealthCheck()">
+                    <i class="fas fa-stethoscope me-2"></i>Run Health Check
+                </button>
+            </div>
+            <div class="sensor-health-list list-group">
+                ${reportList || '<div class="alert alert-success mb-0">All active sensors are reporting normally.</div>'}
+            </div>
+        `;
+    }
+
+    function updateAlertBadge(count) {
+        alertCount = count;
+        const badge = $('#alert-badge');
+        if (count > 0) {
+            badge.text(count).removeClass('d-none');
+        } else {
+            badge.addClass('d-none');
+        }
+    }
+
+    function canAcknowledgeAlerts() {
+        return !!(currentUser && currentUser.role === 'admin');
+    }
+
+    async function acknowledgeAlert(alertId) {
+        if (!canAcknowledgeAlerts()) {
+            showToast('Only admins can acknowledge alerts', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/alerts/${alertId}/acknowledge`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('Alert acknowledged successfully', 'success');
+                
+                // Update the row in the table
+                $(`tr[data-id="${alertId}"]`).find('td:nth-child(6)').html('<span class="badge bg-success">Acknowledged</span>');
+                $(`tr[data-id="${alertId}"]`).find('td:nth-child(7)').html('');
+                
+                // Update alert count
+                if (alertCount > 0) {
+                    alertCount--;
+                    updateAlertBadge(alertCount);
+                }
+            } else {
+                showToast(data.error || 'Failed to acknowledge alert', 'danger');
+            }
+        } catch (error) {
+            console.error('Error acknowledging alert:', error);
+            showToast('Failed to acknowledge alert: ' + error.message, 'danger');
+        }
+    }
+
+    function updateNodeStatus(stats) {
+        $('#active-nodes').text(stats.online || 0);
+        $('#total-nodes').text(stats.total || 0);
+    }
+
+    function updateNodeStatusDisplay() {
+        // This would update the node status display with real data
+        // For now, just trigger a reload
+        loadDashboardData();
+    }
+
+    function updateChartsWithLiveData(data) {
+        const now = new Date();
+        const timeLabel = now.getHours().toString().padStart(2, '0') + ':' + 
+                        now.getMinutes().toString().padStart(2, '0');
+        
+        // Update each chart with new data
+        Object.keys(charts).forEach(chartName => {
+            const chart = charts[chartName];
+            
+            // Add new label
+            chart.data.labels.push(timeLabel);
+            if (chart.data.labels.length > 12) {
+                chart.data.labels.shift();
+            }
+            
+            // Add new data to each dataset
+            chart.data.datasets.forEach((dataset, index) => {
+                let newValue;
+                switch(chartName) {
+                    case 'rainfallChart':
+                        newValue = data.rainfall || 0;
+                        break;
+                    case 'vibrationChart':
+                        newValue = data.vibration || 0;
+                        break;
+                    case 'soilChart':
+                        newValue = data.soil_moisture || 0;
+                        break;
+                    case 'tiltChart':
+                        newValue = index === 0 ? (data.tilt_x || 0) : (data.tilt_y || 0);
+                        break;
+                    case 'riskChart':
+                        newValue = currentRiskScore;
+                        break;
+                    default:
+                        newValue = 0;
+                }
+                
+                dataset.data.push(newValue);
+                if (dataset.data.length > 12) {
+                    dataset.data.shift();
+                }
+            });
+            
+            chart.update('none');
+        });
+        
+        // Update risk statistics
+        const riskValues = charts.riskChart.data.datasets[0].data;
+        const avgRisk = riskValues.length > 0 ? 
+            riskValues.reduce((a, b) => a + b, 0) / riskValues.length : 0;
+        const peakRisk = riskValues.length > 0 ? Math.max(...riskValues) : 0;
+        
+        $('#avg-risk-value').text(avgRisk.toFixed(1) + '%');
+        $('#peak-risk-value').text(peakRisk.toFixed(1) + '%');
+    }
+
+    function updateLastUpdated() {
+        const now = new Date();
+        $('#last-updated').text(now.toLocaleTimeString());
+        $('#data-update-time').text(now.toLocaleTimeString());
+    }
+
+    function updateFooter() {
+        const userType = currentUser && currentUser.role !== 'visitor' ? 
+            currentUser.role.toUpperCase() : 'VISITOR';
+        $('#connection-status').text(`Connected as ${userType}`);
+    }
+
+    function startUptimeCounter() {
+        setInterval(() => {
+            const uptimeMs = Date.now() - systemUptimeStart;
+            const hours = Math.floor(uptimeMs / 3600000);
+            const minutes = Math.floor((uptimeMs % 3600000) / 60000);
+            $('#system-uptime').text(`${hours}h ${minutes}m`);
+        }, 60000); // Update every minute
+    }
+
+    // Chart time range functions
+    function updateChartTimeRange(chartName, range) {
+        const chart = charts[chartName];
+        if (!chart) return;
+        
+        // Update active button state
+        $(`.time-filter-btn[onclick*="${chartName}"]`).removeClass('active');
+        $(`.time-filter-btn[onclick*="${chartName}"][onclick*="${range}"]`).addClass('active');
+        
+        // Load historical data for the selected range
+        loadHistoricalChartData(chartName, range);
+    }
+
+    async function loadHistoricalChartData(chartName, range) {
+        showLoading();
+        
+        try {
+            let endpoint, param;
+            switch(chartName) {
+                case 'rainfallChart':
+                    endpoint = 'sensors/data/historical';
+                    param = 'rainfall';
+                    break;
+                case 'vibrationChart':
+                    endpoint = 'sensors/data/historical';
+                    param = 'vibration';
+                    break;
+                case 'soilChart':
+                    endpoint = 'sensors/data/historical';
+                    param = 'soil_moisture';
+                    break;
+                case 'tiltChart':
+                    endpoint = 'sensors/data/historical';
+                    param = 'tilt';
+                    break;
+                case 'riskChart':
+                    endpoint = 'dashboard/risk-trends';
+                    break;
+                default:
+                    return;
+            }
+            
+            // Calculate time range
+            let hours;
+            switch(range) {
+                case '1h':
+                    hours = 1;
+                    break;
+                case '6h':
+                    hours = 6;
+                    break;
+                case '24h':
+                    hours = 24;
+                    break;
+                case '7d':
+                    hours = 168;
+                    break;
+                default:
+                    hours = 24;
+            }
+            
+            const queryParams = new URLSearchParams({
+                hours: hours,
+                interval: hours > 24 ? 'daily' : 'hourly'
+            });
+
+            const activeNodeId = getActiveDashboardNodeId();
+            const activeLocationId = getActiveDashboardLocationId();
+
+            if (activeNodeId) {
+                queryParams.set('node_id', activeNodeId);
+            }
+
+            if (activeLocationId) {
+                queryParams.set('location_id', activeLocationId);
+            }
+            
+            if (param && chartName !== 'riskChart') {
+                queryParams.set('parameter', param);
+            }
+            
+            const response = await fetch(`${CONFIG.API_BASE_URL}/${endpoint}?${queryParams}`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    updateChartWithHistoricalData(chartName, data.data);
+                }
+            }
+        } catch (error) {
+            console.error(`Error loading ${chartName} data:`, error);
+            showToast(`Failed to load ${chartName} data`, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function updateChartWithHistoricalData(chartName, historicalData) {
+        const chart = charts[chartName];
+        if (!chart) return;
+
+        if (!historicalData || historicalData.length === 0) {
+            chart.data.labels = [];
+            chart.data.datasets.forEach((dataset) => {
+                dataset.data = [];
+            });
+            chart.update();
+            return;
+        }
+        
+        const labels = [];
+        const data = [];
+        const chartParameterMap = {
+            rainfallChart: 'rainfall',
+            vibrationChart: 'vibration',
+            soilChart: 'soil_moisture',
+            riskChart: 'risk_score'
+        };
+
+        if (chartName === 'tiltChart') {
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+        }
+        
+        historicalData.forEach(item => {
+            const time = new Date(item.timestamp || item.hour || item.date);
+            const isDateOnly = !!item.date && !item.timestamp && !item.hour;
+            labels.push(
+                isDateOnly
+                    ? time.toLocaleDateString()
+                    : time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            );
+            
+            if (chartName === 'tiltChart') {
+                chart.data.datasets[0].data.push(item.avg_tilt_x || item.tilt_x || 0);
+                chart.data.datasets[1].data.push(item.avg_tilt_y || item.tilt_y || 0);
+            } else if (chartName === 'riskChart') {
+                data.push(item.risk_score || item.avg_risk_score || 0);
+            } else {
+                const parameterName = chartParameterMap[chartName] || '';
+                const value = item[parameterName] || item[`avg_${parameterName}`] || 0;
+                data.push(value);
+            }
+        });
+        
+        if (chartName !== 'tiltChart') {
+            chart.data.datasets[0].data = data;
+        }
+        
+        chart.data.labels = labels;
+        chart.update();
+    }
+
+    // Navigation functions
+    function setupNavigation() {
+        // Handle nav link clicks
+        $('.nav-link').on('click', function(e) {
+            e.preventDefault();
+            $('.nav-link').removeClass('active');
+            $(this).addClass('active');
+        });
+    }
+
+    function showSection(sectionName) {
+        // Hide all sections
+        $('.section').hide();
+        
+        // Show selected section
+        $(`#${sectionName}-section`).show();
+        
+        // Update active nav link
+        $('.nav-link').removeClass('active');
+        $(`.nav-link[href="#${sectionName}"]`).addClass('active');
+        
+        // Load section-specific data
+        switch(sectionName) {
+            case 'dashboard':
+                loadDashboardData();
+                break;
+            case 'historical':
+                loadHistoricalData();
+                break;
+            case 'alerts':
+                loadAllAlerts();
+                break;
+            case 'nodes':
+                loadSensorNodes();
+                break;
+            case 'admin':
+                if (currentUser && currentUser.role === 'admin') {
+                    loadAdminData();
+                } else {
+                    showToast('Access denied. Admin privileges required.', 'warning');
+                    showSection('dashboard');
+                }
+                break;
+        }
+    }
+
+    // Alert functions
+    function triggerCriticalAlert() {
+        showToast('🚨 CRITICAL LANDSLIDE RISK DETECTED! Immediate action required!', 'danger');
+        
+        // Play alert sound
+        playAlertSound();
+        
+        // Show browser notification
+        if (Notification.permission === 'granted') {
+            new Notification('CRITICAL LANDSLIDE ALERT', {
+                body: 'Immediate evacuation recommended. Check dashboard for details.',
+                icon: 'https://cdn-icons-png.flaticon.com/512/184/184525.png'
+            });
+        }
+    }
+
+    function playAlertSound() {
+        try {
+            // Create emergency beep sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 1000;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.8);
+        } catch (error) {
+            console.log('Audio context not supported');
+        }
+    }
+
+    // Helper function to get authentication headers
+    function getAuthHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        
+        return headers;
+    }
+
+    // Request notification permission
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted');
+            }
+        });
+    }
+
+    // Section loading functions
+    async function loadHistoricalData() {
+        $('#historical-section').html(`
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1><i class="fas fa-chart-line"></i> Historical Data Analysis</h1>
+                    <p class="text-muted">Analyze trends and patterns over time</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="historicalNode" class="form-label">Select Node</label>
+                                <select class="form-select" id="historicalNode">
+                                    <option value="${CONFIG.DEFAULT_NODE_ID}">Loading nodes...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="historicalParameter" class="form-label">Select Parameter</label>
+                                <select class="form-select" id="historicalParameter">
+                                    <option value="rainfall">Rainfall</option>
+                                    <option value="vibration">Vibration</option>
+                                    <option value="soil_moisture">Soil Moisture</option>
+                                    <option value="tilt">Tilt</option>
+                                    <option value="risk_score">Risk Level</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="historicalHours" class="form-label">Time Period</label>
+                                <select class="form-select" id="historicalHours">
+                                    <option value="1">Last Hour</option>
+                                    <option value="6">Last 6 Hours</option>
+                                    <option value="24" selected>Last 24 Hours</option>
+                                    <option value="168">Last 7 Days</option>
+                                    <option value="720">Last 30 Days</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="fetchHistoricalData()">
+                                <i class="fas fa-chart-bar me-2"></i>Load Historical Data
+                            </button>
+                            <div class="mt-4">
+                                <div class="chart-container">
+                                    <canvas id="historicalChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <button class="btn btn-outline-secondary" onclick="showSection('dashboard')">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+
+        await populateHistoricalNodes();
+    }
+
+    async function fetchHistoricalData() {
+        const nodeId = $('#historicalNode').val();
+        const parameter = $('#historicalParameter').val();
+        const hours = parseInt($('#historicalHours').val(), 10);
+        
+        showLoading();
+        
+        try {
+            let endpoint, queryParams;
+            
+            if (parameter === 'risk_score') {
+                endpoint = 'dashboard/risk-trends';
+                queryParams = new URLSearchParams({
+                    node_id: nodeId,
+                    hours: hours
+                });
+            } else {
+                endpoint = 'sensors/data/historical';
+                queryParams = new URLSearchParams({
+                    node_id: nodeId,
+                    parameter: parameter,
+                    hours: hours,
+                    interval: hours > 24 ? 'daily' : 'hourly'
+                });
+            }
+            
+            const response = await fetch(`${CONFIG.API_BASE_URL}/${endpoint}?${queryParams}`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Create historical chart
+                    const ctx = document.getElementById('historicalChart').getContext('2d');
+                    const labels = [];
+                    const chartData = [];
+                    
+                    data.data.forEach(item => {
+                        const time = new Date(item.timestamp || item.hour || item.date);
+                        labels.push(time.toLocaleString());
+                        
+                        if (parameter === 'risk_score') {
+                            chartData.push(item.risk_score || item.avg_risk_score || 0);
+                        } else {
+                            chartData.push(item[parameter] || item[`avg_${parameter}`] || 0);
+                        }
+                    });
+                    
+                    if (historicalChartInstance) {
+                        historicalChartInstance.destroy();
+                    }
+
+                    historicalChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: parameter.replace('_', ' ').toUpperCase(),
+                                data: chartData,
+                                borderColor: '#007bff',
+                                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                borderWidth: 2,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                    
+                    showToast(`Loaded ${parameter} data for last ${hours} hours`, 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching historical data:', error);
+            showToast('Failed to load historical data: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function loadAllAlerts() {
+        showLoading();
+        
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/alerts?limit=50`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                let alertsHtml = '';
+                if (data.success && data.data && data.data.length > 0) {
+                    data.data.forEach(alert => {
+                        const time = new Date(alert.created_at).toLocaleString();
+                        const severityBadge = `<span class="badge bg-${getSeverityColor(alert.severity)}">${alert.severity.toUpperCase()}</span>`;
+                        const statusBadge = alert.is_acknowledged ? 
+                            '<span class="badge bg-success">Acknowledged</span>' : 
+                            '<span class="badge bg-warning">Pending</span>';
+                        
+                        alertsHtml += `
+                            <tr>
+                                <td>${time}</td>
+                                <td>${alert.alert_type}</td>
+                                <td>${alert.message}</td>
+                                <td>${severityBadge}</td>
+                                <td>${alert.location_name || alert.node_id}</td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    ${!alert.is_acknowledged && canAcknowledgeAlerts() ? `
+                                    <button class="btn btn-sm btn-outline-primary" onclick="acknowledgeAlert(${alert.id})">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    ` : ''}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    alertsHtml = '<tr><td colspan="7" class="text-center">No alerts found</td></tr>';
+                }
+                
+                $('#alerts-section').html(`
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h1><i class="fas fa-bell"></i> Alert Management</h1>
+                            <p class="text-muted">View and manage all system alerts</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Time</th>
+                                                    <th>Type</th>
+                                                    <th>Message</th>
+                                                    <th>Severity</th>
+                                                    <th>Node/Location</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${alertsHtml}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="text-center mt-4">
+                                        <button class="btn btn-primary" onclick="showSection('dashboard')">
+                                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+        } catch (error) {
+            console.error('Error loading all alerts:', error);
+            showToast('Failed to load alerts: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function loadSensorNodes() {
+        showLoading();
+        
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/nodes`, {
+                headers: getAuthHeaders()
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                let nodesHtml = '';
+                if (data.success && data.nodes && data.nodes.length > 0) {
+                    data.nodes.forEach(node => {
+                        const statusBadge = node.status === 'online' ? 
+                            '<span class="badge bg-success">Online</span>' :
+                            '<span class="badge bg-danger">Offline</span>';
+                        
+                        const lastSeen = node.last_seen ? 
+                            new Date(node.last_seen).toLocaleString() : 'Never';
+                        
+                        nodesHtml += `
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${node.name}</h5>
+                                        <p class="card-text">
+                                            <strong>ID:</strong> ${node.node_id}<br>
+                                            <strong>Location:</strong> ${node.location_name || 'N/A'}<br>
+                                            <strong>Status:</strong> ${statusBadge}<br>
+                                            <strong>Last Seen:</strong> ${lastSeen}<br>
+                                            <strong>Battery:</strong> ${node.battery_level || 0}%<br>
+                                            <strong>Risk:</strong> ${node.latest_risk_level || 'Unknown'}
+                                        </p>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="openNodeDashboard('${node.location_id || ''}','${node.node_id}')">
+                                            <i class="fas fa-arrow-right me-2"></i>Open Dashboard
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    nodesHtml = '<div class="col-12"><p class="text-center">No nodes found</p></div>';
+                }
+                
+                $('#nodes-section').html(`
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h1><i class="fas fa-satellite-dish"></i> Sensor Nodes</h1>
+                            <p class="text-muted">Monitor all sensor nodes in the network and jump directly into a node dashboard</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        ${nodesHtml}
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <button class="btn btn-primary" onclick="showSection('dashboard')">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                `);
+            }
+        } catch (error) {
+            console.error('Error loading sensor nodes:', error);
+            showToast('Failed to load sensor nodes: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function loadAdminData() {
+        if (currentUser.role !== 'admin') {
+            showToast('Access denied. Admin privileges required.', 'warning');
+            showSection('dashboard');
+            return;
+        }
+        
+        showLoading();
+        
+        try {
+            const usersResponse = await fetch(`${CONFIG.API_BASE_URL}/admin/users`, {
+                headers: getAuthHeaders()
+            });
+            const locationsResponse = await fetch(`${CONFIG.API_BASE_URL}/admin/locations`, {
+                headers: getAuthHeaders()
+            });
+            const rulesResponse = await fetch(`${CONFIG.API_BASE_URL}/alerts/rules`, {
+                headers: getAuthHeaders()
+            });
+            const sensorHealthResponse = await fetch(`${CONFIG.API_BASE_URL}/admin/sensor-health`, {
+                headers: getAuthHeaders()
+            });
+            
+            let usersHtml = '';
+            adminUsersCache = [];
+            if (usersResponse.ok) {
+                const usersData = await usersResponse.json();
+                if (usersData.success && usersData.users) {
+                    adminUsersCache = usersData.users;
+                    usersData.users.forEach(user => {
+                        const roleBadge = user.role === 'admin' ? 
+                            '<span class="badge bg-danger">Admin</span>' :
+                            user.role === 'operator' ? 
+                                '<span class="badge bg-warning">Operator</span>' :
+                            user.role === 'visitor' ?
+                                '<span class="badge bg-secondary">Visitor</span>' :
+                            '<span class="badge bg-info">Viewer</span>';
+                        
+                        const statusBadge = user.is_active ? 
+                            '<span class="badge bg-success">Active</span>' :
+                            '<span class="badge bg-secondary">Inactive</span>';
+                        
+                        usersHtml += `
+                            <tr>
+                                <td>${user.username}</td>
+                                <td>${user.full_name}</td>
+                                <td>${user.email}</td>
+                                <td>${roleBadge}</td>
+                                <td>${statusBadge}</td>
+                                <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="editUser(${user.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
+            let locationOptions = '<option value="">All Locations (Global)</option>';
+            adminLocationsCache = [];
+            if (locationsResponse.ok) {
+                const locationsData = await locationsResponse.json();
+                if (locationsData.success && locationsData.locations) {
+                    adminLocationsCache = locationsData.locations;
+                    locationsData.locations.forEach(location => {
+                        locationOptions += `<option value="${location.id}">${location.name}</option>`;
+                    });
+                }
+            }
+
+            let rulesTableRows = '<tr><td colspan="8" class="text-center">No threshold rules found</td></tr>';
+            alertRulesCache = [];
+            if (rulesResponse.ok) {
+                const rulesData = await rulesResponse.json();
+                if (rulesData.success && rulesData.rules && rulesData.rules.length > 0) {
+                    alertRulesCache = rulesData.rules;
+                    rulesTableRows = rulesData.rules.map(rule => {
+                        const statusBadge = rule.is_active
+                            ? '<span class="badge bg-success">Active</span>'
+                            : '<span class="badge bg-secondary">Inactive</span>';
+                        const severityBadge = `<span class="badge bg-${getSeverityColor(rule.severity)}">${(rule.severity || '').toUpperCase()}</span>`;
+                        const locationName = rule.location ? rule.location.name : 'All Locations';
+                        return `
+                            <tr>
+                                <td>${rule.name}</td>
+                                <td>${locationName}</td>
+                                <td>${rule.parameter}</td>
+                                <td>${rule.operator} ${rule.threshold_value}</td>
+                                <td>${severityBadge}</td>
+                                <td>${rule.duration_minutes} min</td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editThresholdRule(${rule.id})" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-${rule.is_active ? 'warning' : 'success'}" onclick="toggleThresholdRuleStatus(${rule.id}, ${rule.is_active})" title="Toggle Status">
+                                        <i class="fas fa-power-off"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteThresholdRule(${rule.id})" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            latestSensorHealthReport = null;
+            if (sensorHealthResponse.ok) {
+                const sensorHealthData = await sensorHealthResponse.json();
+                if (sensorHealthData.success && sensorHealthData.sensor_health) {
+                    latestSensorHealthReport = sensorHealthData.sensor_health;
+                }
+            }
+
+            const sensorHealthHtml = renderSensorHealthPanel(latestSensorHealthReport);
+             
+            $('#admin-section').html(`
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h1><i class="fas fa-cogs"></i> Admin Panel</h1>
+                        <p class="text-muted">System administration and location-based threshold management</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-users"></i> User Management</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Full Name</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Last Login</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${usersHtml || '<tr><td colspan="7" class="text-center">No users found</td></tr>'}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button class="btn btn-primary mt-2" onclick="addNewUser()">
+                                    <i class="fas fa-user-plus me-2"></i>Add New User
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-sliders-h"></i> System Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-success">
+                                    <strong>Current User:</strong> ${currentUser.full_name} (${currentUser.role})
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-warning" onclick="showSystemLogs()">
+                                        <i class="fas fa-file-alt me-2"></i>View System Logs
+                                    </button>
+                                    <button class="btn btn-danger mt-2" onclick="backupDatabase()">
+                                        <i class="fas fa-database me-2"></i>Backup Database
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mb-4">
+                        ${sensorHealthHtml}
+                    </div>
+
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="fas fa-sliders-h"></i> Sensor Threshold Rules by Location</h5>
+                            </div>
+                            <div class="card-body">
+                                <input type="hidden" id="threshold-rule-id">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="rule-name" class="form-label">Rule Name</label>
+                                        <input type="text" class="form-control" id="rule-name" placeholder="e.g. Heavy Rainfall - North Slope">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="rule-location" class="form-label">Location</label>
+                                        <select class="form-select" id="rule-location">
+                                            ${locationOptions}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="rule-parameter" class="form-label">Sensor Parameter</label>
+                                        <select class="form-select" id="rule-parameter">
+                                            <option value="rainfall">Rainfall</option>
+                                            <option value="soil_moisture">Soil Moisture</option>
+                                            <option value="tilt">Tilt</option>
+                                            <option value="vibration">Vibration</option>
+                                            <option value="temperature">Temperature</option>
+                                            <option value="risk_score">Risk Score</option>
+                                            <option value="battery">Battery</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label for="rule-operator" class="form-label">Operator</label>
+                                        <select class="form-select" id="rule-operator">
+                                            <option value=">">></option>
+                                            <option value=">=">>=</option>
+                                            <option value="<">&lt;</option>
+                                            <option value="<=">&lt;=</option>
+                                            <option value="=">=</option>
+                                            <option value="!=">!=</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label for="rule-threshold" class="form-label">Threshold</label>
+                                        <input type="number" step="0.001" class="form-control" id="rule-threshold" placeholder="0.000">
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label for="rule-severity" class="form-label">Severity</label>
+                                        <select class="form-select" id="rule-severity">
+                                            <option value="low">Low</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="high">High</option>
+                                            <option value="critical">Critical</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label for="rule-duration" class="form-label">Duration (min)</label>
+                                        <input type="number" min="1" class="form-control" id="rule-duration" value="5">
+                                    </div>
+                                    <div class="col-md-2 mb-3 d-flex align-items-center">
+                                        <div class="form-check mt-4">
+                                            <input class="form-check-input" type="checkbox" id="rule-active" checked>
+                                            <label class="form-check-label" for="rule-active">Active</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label for="rule-description" class="form-label">Description</label>
+                                        <input type="text" class="form-control" id="rule-description" placeholder="Optional description">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <button class="btn btn-primary me-2" onclick="saveThresholdRule()">
+                                        <i class="fas fa-save me-2"></i>Save Rule
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="resetThresholdRuleForm()">
+                                        <i class="fas fa-undo me-2"></i>Reset
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Location</th>
+                                                <th>Parameter</th>
+                                                <th>Condition</th>
+                                                <th>Severity</th>
+                                                <th>Duration</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${rulesTableRows}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button class="btn btn-primary" onclick="showSection('dashboard')">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </button>
+                    </div>
+                </div>
+            `);
+        } catch (error) {
+            console.error('Error loading admin data:', error);
+            showToast('Failed to load admin data: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Handle self-registration from login modal
+    async function handleRegistration() {
+        const full_name = $('#register-full-name').val().trim();
+        const username = $('#register-username').val().trim();
+        const email = $('#register-email').val().trim();
+        const mobile_number = $('#register-mobile-number').val().trim();
+        const password = $('#register-password').val();
+        const confirmPassword = $('#register-confirm-password').val();
+
+        if (!full_name || !username || !email || !mobile_number || !password || !confirmPassword) {
+            showToast('Please fill all registration fields', 'warning');
+            return;
+        }
+
+        if (password.length < 6) {
+            showToast('Password must be at least 6 characters', 'warning');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showToast('Passwords do not match', 'warning');
+            return;
+        }
+
+        showLoading();
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/auth/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ full_name, username, email, mobile_number, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            persistAuthSession(data.token, data.user, false);
+            $('#register-form')[0].reset();
+            showDashboard();
+            showToast('Registration successful. Welcome!', 'success');
+        } catch (error) {
+            console.error('Registration error:', error);
+            showToast('Registration failed: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function showProfile() {
+        if (!currentUser) return;
+        
+        showToast(`User Profile: ${currentUser.full_name} (${currentUser.role})`, 'info');
+    }
+
+    function ensureSettingsModalExists() {
+        if (document.getElementById('settingsModal')) return;
+
+        $('body').append(`
+            <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-bell me-2"></i>Alert Notification Settings</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="ns-email">
+                                <label class="form-check-label" for="ns-email">Email notifications</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="ns-low">
+                                <label class="form-check-label" for="ns-low">Low severity alerts</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="ns-medium">
+                                <label class="form-check-label" for="ns-medium">Medium severity alerts</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="ns-high">
+                                <label class="form-check-label" for="ns-high">High severity alerts</label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="ns-critical">
+                                <label class="form-check-label" for="ns-critical">Critical severity alerts</label>
+                            </div>
+                            <label for="ns-frequency" class="form-label">Email frequency</label>
+                            <select id="ns-frequency" class="form-select">
+                                <option value="immediate">Immediate</option>
+                                <option value="hourly">Hourly</option>
+                                <option value="daily">Daily</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="saveNotificationSettings()">
+                                <i class="fas fa-save me-2"></i>Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+
+    }
+
+    async function populateHistoricalNodes() {
+        try {
+            if (!dashboardCatalog.nodes || dashboardCatalog.nodes.length === 0) {
+                await loadDashboardCatalog();
+            }
+
+            const nodes = getDashboardNodesForLocation(selectedDashboardLocationId);
+            if (!Array.isArray(nodes) || nodes.length === 0) {
+                $('#historicalNode').html('<option value="">No nodes available</option>');
+                return;
+            }
+
+            const options = nodes.map((node) => {
+                const label = node.name ? `${node.node_id} - ${node.name}` : node.node_id;
+                return `<option value="${node.node_id}">${label}</option>`;
+            });
+
+            $('#historicalNode').html(options.join(''));
+            if (selectedDashboardNodeId && nodes.some((node) => node.node_id === selectedDashboardNodeId)) {
+                $('#historicalNode').val(selectedDashboardNodeId);
+            } else if (nodes.some((node) => node.node_id === CONFIG.DEFAULT_NODE_ID)) {
+                $('#historicalNode').val(CONFIG.DEFAULT_NODE_ID);
+            } else {
+                $('#historicalNode').val(nodes[0].node_id);
+            }
+        } catch (error) {
+            console.error('Failed to load historical nodes:', error);
+        }
+    }
+
+    async function showSettings() {
+        if (!currentUser || currentUser.role === 'visitor') {
+            showToast('Login is required to change settings', 'warning');
+            return;
+        }
+
+        ensureSettingsModalExists();
+        showLoading();
+
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/auth/notification-settings`, {
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (!data.success || !data.settings) {
+                throw new Error(data.error || 'Failed to load settings');
+            }
+
+            const s = data.settings;
+            $('#ns-email').prop('checked', !!s.email_notifications);
+            $('#ns-low').prop('checked', !!s.low_severity);
+            $('#ns-medium').prop('checked', !!s.medium_severity);
+            $('#ns-high').prop('checked', !!s.high_severity);
+            $('#ns-critical').prop('checked', !!s.critical_severity);
+            $('#ns-frequency').val(s.notification_frequency || 'immediate');
+
+            const modalEl = document.getElementById('settingsModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        } catch (error) {
+            console.error('Error loading notification settings:', error);
+            showToast('Failed to load settings: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function saveNotificationSettings() {
+        showLoading();
+        try {
+            const payload = {
+                email_notifications: $('#ns-email').is(':checked'),
+                low_severity: $('#ns-low').is(':checked'),
+                medium_severity: $('#ns-medium').is(':checked'),
+                high_severity: $('#ns-high').is(':checked'),
+                critical_severity: $('#ns-critical').is(':checked'),
+                notification_frequency: $('#ns-frequency').val()
+            };
+
+            const response = await fetch(`${CONFIG.API_BASE_URL}/auth/notification-settings`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            const modalEl = document.getElementById('settingsModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.hide();
+            showToast('Notification settings saved', 'success');
+        } catch (error) {
+            console.error('Error saving notification settings:', error);
+            showToast('Failed to save settings: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function resetThresholdRuleForm() {
+        $('#threshold-rule-id').val('');
+        $('#rule-name').val('');
+        $('#rule-description').val('');
+        $('#rule-location').val('');
+        $('#rule-parameter').val('rainfall');
+        $('#rule-operator').val('>');
+        $('#rule-threshold').val('');
+        $('#rule-severity').val('medium');
+        $('#rule-duration').val('5');
+        $('#rule-active').prop('checked', true);
+    }
+
+    function editThresholdRule(ruleId) {
+        const rule = alertRulesCache.find(r => r.id === ruleId);
+        if (!rule) {
+            showToast('Rule not found', 'warning');
+            return;
+        }
+
+        $('#threshold-rule-id').val(rule.id);
+        $('#rule-name').val(rule.name || '');
+        $('#rule-description').val(rule.description || '');
+        $('#rule-location').val(rule.location_id || '');
+        $('#rule-parameter').val(rule.parameter || 'rainfall');
+        $('#rule-operator').val(rule.operator || '>');
+        $('#rule-threshold').val(rule.threshold_value);
+        $('#rule-severity').val(rule.severity || 'medium');
+        $('#rule-duration').val(rule.duration_minutes || 5);
+        $('#rule-active').prop('checked', !!rule.is_active);
+        showToast(`Editing threshold rule: ${rule.name}`, 'info');
+    }
+
+    async function saveThresholdRule() {
+        if (!currentUser || currentUser.role !== 'admin') {
+            showToast('Admin privileges required', 'warning');
+            return;
+        }
+
+        const ruleId = $('#threshold-rule-id').val();
+        const thresholdValue = parseFloat($('#rule-threshold').val());
+
+        if (!Number.isFinite(thresholdValue)) {
+            showToast('Threshold value must be a valid number', 'warning');
+            return;
+        }
+
+        const payload = {
+            name: $('#rule-name').val().trim(),
+            description: $('#rule-description').val().trim(),
+            parameter: $('#rule-parameter').val(),
+            operator: $('#rule-operator').val(),
+            threshold_value: thresholdValue,
+            severity: $('#rule-severity').val(),
+            duration_minutes: parseInt($('#rule-duration').val(), 10) || 5,
+            location_id: $('#rule-location').val() ? parseInt($('#rule-location').val(), 10) : null,
+            is_active: $('#rule-active').is(':checked')
+        };
+
+        if (!payload.name) {
+            showToast('Rule name is required', 'warning');
+            return;
+        }
+
+        showLoading();
+        try {
+            const isEdit = !!ruleId;
+            const endpoint = isEdit
+                ? `${CONFIG.API_BASE_URL}/alerts/rules/${ruleId}`
+                : `${CONFIG.API_BASE_URL}/alerts/rules`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const response = await fetch(endpoint, {
+                method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            showToast(isEdit ? 'Threshold rule updated' : 'Threshold rule created', 'success');
+            await loadAdminData();
+            resetThresholdRuleForm();
+        } catch (error) {
+            console.error('Error saving threshold rule:', error);
+            showToast('Failed to save threshold rule: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function deleteThresholdRule(ruleId) {
+        if (!confirm('Delete this threshold rule?')) return;
+
+        showLoading();
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/alerts/rules/${ruleId}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            showToast('Threshold rule deleted', 'success');
+            await loadAdminData();
+        } catch (error) {
+            console.error('Error deleting threshold rule:', error);
+            showToast('Failed to delete threshold rule: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function toggleThresholdRuleStatus(ruleId, isActive) {
+        showLoading();
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/alerts/rules/${ruleId}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ is_active: !isActive })
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            showToast(`Rule ${!isActive ? 'activated' : 'deactivated'}`, 'success');
+            await loadAdminData();
+        } catch (error) {
+            console.error('Error updating threshold status:', error);
+            showToast('Failed to update rule status: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Admin functions
+    function ensureUserModalExists() {
+        if (document.getElementById('userModal')) return;
+
+        $('body').append(`
+            <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="userModalTitle">User</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="user-id">
+                            <div class="mb-3">
+                                <label class="form-label" for="user-username">Username</label>
+                                <input class="form-control" id="user-username" type="text">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="user-full-name">Full Name</label>
+                                <input class="form-control" id="user-full-name" type="text">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="user-email">Email</label>
+                                <input class="form-control" id="user-email" type="email">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="user-mobile-number">Mobile Number</label>
+                                <input class="form-control" id="user-mobile-number" type="tel">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="user-role">Role</label>
+                                <select class="form-select" id="user-role">
+                                    <option value="viewer">Viewer</option>
+                                    <option value="operator">Operator</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="visitor">Visitor</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="user-password">Password</label>
+                                <input class="form-control" id="user-password" type="password" placeholder="Required for new user; optional for edit">
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="user-active" checked>
+                                <label class="form-check-label" for="user-active">Active</label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveAdminUser()">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+
+    function openUserModal(mode, user = null) {
+        ensureUserModalExists();
+        const isEdit = mode === 'edit';
+
+        $('#userModalTitle').text(isEdit ? 'Edit User' : 'Add New User');
+        $('#user-id').val(isEdit ? user.id : '');
+        $('#user-username').val(isEdit ? (user.username || '') : '').prop('disabled', isEdit);
+        $('#user-full-name').val(isEdit ? (user.full_name || '') : '');
+        $('#user-email').val(isEdit ? (user.email || '') : '');
+        $('#user-mobile-number').val(isEdit ? (user.mobile_number || '') : '');
+        $('#user-role').val(isEdit ? (user.role || 'viewer') : 'viewer');
+        $('#user-password').val('');
+        $('#user-active').prop('checked', isEdit ? !!user.is_active : true);
+
+        const modalEl = document.getElementById('userModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    function editUser(userId) {
+        const user = adminUsersCache.find(u => u.id === userId);
+        if (!user) {
+            showToast('User not found', 'warning');
+            return;
+        }
+        openUserModal('edit', user);
+    }
+
+    function addNewUser() {
+        openUserModal('create');
+    }
+
+    async function saveAdminUser() {
+        const userId = $('#user-id').val();
+        const isEdit = !!userId;
+
+        const payload = {
+            username: $('#user-username').val().trim(),
+            full_name: $('#user-full-name').val().trim(),
+            email: $('#user-email').val().trim(),
+            mobile_number: $('#user-mobile-number').val().trim(),
+            role: $('#user-role').val(),
+            is_active: $('#user-active').is(':checked')
+        };
+
+        const password = $('#user-password').val();
+        if (isEdit) {
+            if (password) payload.password = password;
+        } else {
+            payload.password = password;
+        }
+
+        if (!payload.full_name || !payload.email || !payload.mobile_number || !payload.role || (!isEdit && (!payload.username || !payload.password))) {
+            showToast('Please fill all required fields', 'warning');
+            return;
+        }
+
+        showLoading();
+        try {
+            const endpoint = isEdit
+                ? `${CONFIG.API_BASE_URL}/admin/users/${userId}`
+                : `${CONFIG.API_BASE_URL}/admin/users`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const response = await fetch(endpoint, {
+                method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            const modalEl = document.getElementById('userModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.hide();
+
+            showToast(isEdit ? 'User updated successfully' : 'User created successfully', 'success');
+            await loadAdminData();
+        } catch (error) {
+            console.error('Error saving user:', error);
+            showToast('Failed to save user: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function ensureLogsModalExists() {
+        if (document.getElementById('logsModal')) return;
+
+        $('body').append(`
+            <div class="modal fade" id="logsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>System Logs</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Level</th>
+                                            <th>Module</th>
+                                            <th>Message</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logs-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+
+    async function showSystemLogs() {
+        ensureLogsModalExists();
+        showLoading();
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/admin/logs?limit=100`, {
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            const rows = (data.logs || []).map(log => `
+                <tr>
+                    <td>${new Date(log.timestamp).toLocaleString()}</td>
+                    <td>${log.level || ''}</td>
+                    <td>${log.module || ''}</td>
+                    <td>${log.message || ''}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="text-center">No logs available</td></tr>';
+
+            $('#logs-table-body').html(rows);
+
+            const modalEl = document.getElementById('logsModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        } catch (error) {
+            console.error('Error loading system logs:', error);
+            showToast('Failed to load system logs: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function backupDatabase() {
+        showLoading();
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/admin/database/maintenance`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ action: 'backup' })
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            showToast(data.message || 'Database backup created', 'success');
+        } catch (error) {
+            console.error('Error creating backup:', error);
+            showToast('Backup failed: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function runSensorHealthCheck() {
+        showLoading();
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/admin/sensor-health/check`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+
+            latestSensorHealthReport = data.sensor_health || null;
+            showToast(data.message || 'Sensor health check completed', 'success');
+            await loadAdminData();
+        } catch (error) {
+            console.error('Error running sensor health check:', error);
+            showToast('Failed to run sensor health check: ' + error.message, 'danger');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Make functions available globally
+    window.showSection = showSection;
+    window.logout = logout;
+    window.loadDashboardData = loadDashboardData;
+    window.loadHistoricalData = loadHistoricalData;
+    window.fetchHistoricalData = fetchHistoricalData;
+    window.loadAllAlerts = loadAllAlerts;
+    window.loadSensorNodes = loadSensorNodes;
+    window.loadAdminData = loadAdminData;
+    window.showProfile = showProfile;
+    window.showSettings = showSettings;
+    window.openNodeDashboard = openNodeDashboard;
+    window.updateChartTimeRange = updateChartTimeRange;
+    window.loadRecentAlerts = loadRecentAlerts;
+    window.acknowledgeAlert = acknowledgeAlert;
+    window.continueAsGuest = continueAsGuest;
+    window.switchAuthTab = switchAuthTab;
+    window.editUser = editUser;
+    window.addNewUser = addNewUser;
+    window.showSystemLogs = showSystemLogs;
+    window.backupDatabase = backupDatabase;
+    window.runSensorHealthCheck = runSensorHealthCheck;
+    window.saveNotificationSettings = saveNotificationSettings;
+    window.saveAdminUser = saveAdminUser;
+    window.saveThresholdRule = saveThresholdRule;
+    window.resetThresholdRuleForm = resetThresholdRuleForm;
+    window.editThresholdRule = editThresholdRule;
+    window.deleteThresholdRule = deleteThresholdRule;
+    window.toggleThresholdRuleStatus = toggleThresholdRuleStatus;
+</script>
+</body>
+</html>

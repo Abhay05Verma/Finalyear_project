@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS sms_logs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    alert_id BIGINT NOT NULL,
+    mobile_number VARCHAR(20) NOT NULL,
+    provider VARCHAR(50) NOT NULL DEFAULT 'MSG91',
+    status ENUM('pending', 'sent', 'failed', 'skipped') NOT NULL DEFAULT 'pending',
+    attempt_count INT NOT NULL DEFAULT 0,
+    severity VARCHAR(20) NULL,
+    location_name VARCHAR(100) NULL,
+    message TEXT NOT NULL,
+    provider_response LONGTEXT NULL,
+    error_message TEXT NULL,
+    sent_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sms_logs_alert FOREIGN KEY (alert_id) REFERENCES alerts(id) ON DELETE CASCADE,
+    INDEX idx_sms_logs_alert_id (alert_id),
+    INDEX idx_sms_logs_status (status),
+    INDEX idx_sms_logs_created_at (created_at)
+);

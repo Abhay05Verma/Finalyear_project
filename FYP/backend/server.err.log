@@ -1,0 +1,96 @@
+Error processing ThingSpeak data for node NODE-001: Error
+    at Query.run (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MySQLQueryInterface.bulkUpdate (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\sequelize\lib\dialects\abstract\query-interface.js:366:12)
+    at async SensorNode.update (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\sequelize\lib\model.js:2010:28)
+    at async ThingSpeakService.processThingSpeakData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:80:7)
+    at async ThingSpeakService.fetchChannelData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:30:9)
+    at async C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:127:11
+    at async Promise.allSettled (index 0)
+    at async ThingSpeakService.fetchAllChannelsData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:134:5) {
+  name: 'SequelizeDatabaseError',
+  parent: Error: Prepared statement needs to be re-prepared
+      at Packet.asError (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\packets\packet.js:739:17)
+      at Execute.execute (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\base\connection.js:508:34)
+      at PacketParser.onPacket (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\base\connection.js:93:12)
+      at PacketParser.executeStart (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\base\connection.js:100:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_NEED_REPREPARE',
+    errno: 1615,
+    sqlState: 'HY000',
+    sqlMessage: 'Prepared statement needs to be re-prepared',
+    sql: 'UPDATE `sensor_nodes` SET `last_seen`=?,`status`=?,`battery_level`=?,`updated_at`=? WHERE `node_id` = ?',
+    parameters: [
+      '2026-02-16 17:10:26',
+      'online',
+      null,
+      '2026-02-16 17:10:26',
+      'NODE-001'
+    ]
+  },
+  original: Error: Prepared statement needs to be re-prepared
+      at Packet.asError (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\packets\packet.js:739:17)
+      at Execute.execute (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\commands\command.js:29:26)
+      at Connection.handlePacket (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\base\connection.js:508:34)
+      at PacketParser.onPacket (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\base\connection.js:93:12)
+      at PacketParser.executeStart (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\packet_parser.js:75:16)
+      at Socket.<anonymous> (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\node_modules\mysql2\lib\base\connection.js:100:25)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5) {
+    code: 'ER_NEED_REPREPARE',
+    errno: 1615,
+    sqlState: 'HY000',
+    sqlMessage: 'Prepared statement needs to be re-prepared',
+    sql: 'UPDATE `sensor_nodes` SET `last_seen`=?,`status`=?,`battery_level`=?,`updated_at`=? WHERE `node_id` = ?',
+    parameters: [
+      '2026-02-16 17:10:26',
+      'online',
+      null,
+      '2026-02-16 17:10:26',
+      'NODE-001'
+    ]
+  },
+  sql: 'UPDATE `sensor_nodes` SET `last_seen`=?,`status`=?,`battery_level`=?,`updated_at`=? WHERE `node_id` = ?',
+  parameters: [
+    '2026-02-16 17:10:26',
+    'online',
+    null,
+    '2026-02-16 17:10:26',
+    'NODE-001'
+  ]
+}
+Error creating alert: ReferenceError: dispatchEmailAlert is not defined
+    at AlertService.createAlert (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\alertService.js:132:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async AlertService.checkForAlerts (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\alertService.js:40:25)
+    at async ThingSpeakService.processThingSpeakData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:89:7)
+    at async ThingSpeakService.fetchChannelData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:30:9)
+    at async C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:127:11
+    at async Promise.allSettled (index 0)
+    at async ThingSpeakService.fetchAllChannelsData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:134:5)
+Error creating alert: ReferenceError: dispatchEmailAlert is not defined
+    at AlertService.createAlert (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\alertService.js:132:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async AlertService.checkForAlerts (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\alertService.js:40:25)
+    at async ThingSpeakService.processThingSpeakData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:89:7)
+    at async ThingSpeakService.fetchChannelData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:30:9)
+    at async C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:127:11
+    at async Promise.allSettled (index 0)
+    at async ThingSpeakService.fetchAllChannelsData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:134:5)
+Error creating alert: ReferenceError: dispatchEmailAlert is not defined
+    at AlertService.createAlert (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\alertService.js:132:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async AlertService.checkForAlerts (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\alertService.js:40:25)
+    at async ThingSpeakService.processThingSpeakData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:89:7)
+    at async ThingSpeakService.fetchChannelData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:30:9)
+    at async C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:127:11
+    at async Promise.allSettled (index 0)
+    at async ThingSpeakService.fetchAllChannelsData (C:\Users\abhay\OneDrive\Desktop\FYP_ews\backend\services\thingspeakService.js:134:5)
